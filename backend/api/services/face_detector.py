@@ -158,6 +158,10 @@ class FaceDetector:
             Dictionary containing normalized coordinates for facial features
         """
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(self.thread_pool, self.detect_face, image)
+        try:
+            return await loop.run_in_executor(self.thread_pool, self.detect_face, image)
+        except Exception as e:
+            logger.error(f"Error in async face detection: {str(e)}")
+            raise FaceDetectionError(f"Error in async face detection: {str(e)}")
 
 face_detector = FaceDetector()
