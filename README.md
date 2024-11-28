@@ -1,5 +1,8 @@
 # FaceToEquation
 
+![Image](IMG_2392.png)
+
+
 User uploads an image of their face
 Simple drag & drop or file select interface
 Show preview of uploaded image

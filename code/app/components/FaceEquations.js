@@ -76,7 +76,7 @@ const FaceEquations = () => {
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-xl shadow-lg p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Face to Equations</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Face to Equations (Currently in Beta)</h1>
             <p className="text-gray-600">Upload a face image to generate mathematical equations</p>
           </div>
 
