@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Upload } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import FaceVisualizer from './FaceVisualizer';
+import EnhancedFaceVisualizer from './EnhancedFaceVisualizer';
 import ImageLandmarks from './ImageLandmarks';
 
 const FaceEquations = () => {
@@ -130,7 +130,8 @@ const FaceEquations = () => {
             </div>
 
             <div>
-              {faceData && <FaceVisualizer faceData={faceData} />}
+              {/* {faceData && <FaceVisualizer faceData={faceData} />} */}
+              {faceData && <EnhancedFaceVisualizer faceData={faceData} />}
             </div>
           </div>
         </div>

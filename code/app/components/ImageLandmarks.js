@@ -1,7 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const ImageLandmarks = ({ imageUrl, landmarks, imageDimensions }) => {
   const canvasRef = useRef(null);
+  const [debug, setDebug] = useState(false);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     if (!landmarks || !imageUrl || !canvasRef.current) return;
@@ -11,19 +13,26 @@ const ImageLandmarks = ({ imageUrl, landmarks, imageDimensions }) => {
     const img = new Image();
 
     img.onload = () => {
-      // Set canvas size to match image
-      canvas.width = imageDimensions.width;
-      canvas.height = imageDimensions.height;
+      // Store original image dimensions
+      const originalWidth = img.width;
+      const originalHeight = img.height;
 
-      // Draw image
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      // Set canvas size to match the original image dimensions
+      canvas.width = originalWidth;
+      canvas.height = originalHeight;
 
-      // Style for points and lines
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw image at original size
+      ctx.drawImage(img, 0, 0, originalWidth, originalHeight);
+
+      // Style for points
+      const pointSize = Math.min(originalWidth, originalHeight) * 0.005; // Relative point size
       ctx.lineWidth = 2;
 
       // Draw landmarks for each feature
       Object.entries(landmarks).forEach(([feature, points]) => {
-        // Set color based on feature
         const colors = {
           jawline: '#2563eb',
           right_eyebrow: '#16a34a',
@@ -35,43 +44,96 @@ const ImageLandmarks = ({ imageUrl, landmarks, imageDimensions }) => {
           outer_lips: '#db2777',
           inner_lips: '#db2777'
         };
-        ctx.strokeStyle = colors[feature] || '#000000';
         ctx.fillStyle = colors[feature] || '#000000';
 
-        // Draw points and lines
-        ctx.beginPath();
+        // Draw points
         points.forEach(([x, y], index) => {
-          const canvasX = x * canvas.width;
-          const canvasY = y * canvas.height;
+          // Convert normalized coordinates (0-1) to pixel coordinates
+          const canvasX = x * originalWidth;
+          const canvasY = y * originalHeight;
 
           // Draw point
-          ctx.fillRect(canvasX - 2, canvasY - 2, 4, 4);
+          ctx.beginPath();
+          ctx.arc(canvasX, canvasY, pointSize, 0, 2 * Math.PI);
+          ctx.fill();
 
-          // Connect points with lines
-          if (index === 0) {
-            ctx.moveTo(canvasX, canvasY);
+          if (debug) {
+            // Add coordinate labels in debug mode
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.font = `${pointSize * 3}px Arial`;
+            const label = `${index + 1} (${x.toFixed(2)}, ${y.toFixed(2)})`;
+            ctx.strokeText(label, canvasX + pointSize * 2, canvasY + pointSize * 2);
+            ctx.fillText(label, canvasX + pointSize * 2, canvasY + pointSize * 2);
+            ctx.fillStyle = colors[feature];
           } else {
-            ctx.lineTo(canvasX, canvasY);
+            // Just show point numbers in normal mode
+            ctx.fillStyle = 'white';
+            ctx.font = `${pointSize * 3}px Arial`;
+            ctx.fillText(index + 1, canvasX + pointSize * 2, canvasY + pointSize * 2);
+            ctx.fillStyle = colors[feature];
           }
         });
-
-        // Close the path for closed features
-        if (['right_eye', 'left_eye', 'outer_lips', 'inner_lips'].includes(feature)) {
-          ctx.closePath();
-        }
-        ctx.stroke();
       });
     };
 
     img.src = imageUrl;
-  }, [imageUrl, landmarks, imageDimensions]);
+  }, [imageUrl, landmarks, imageDimensions, debug]);
 
   return (
-    <div className="relative w-full">
-      <canvas
-        ref={canvasRef}
-        className="w-full h-auto rounded-lg"
-      />
+    <div className="space-y-4" ref={containerRef}>
+      <div className="relative w-full">
+        <canvas
+          ref={canvasRef}
+          className="w-full h-auto rounded-lg"
+          style={{ maxHeight: '80vh' }}
+        />
+      </div>
+      
+      <div className="flex justify-between items-start">
+        <div className="text-sm space-y-2">
+          <div className="font-medium">Feature Points Legend:</div>
+          <div className="grid grid-cols-2 gap-2">
+            {Object.entries(landmarks || {}).map(([feature, points]) => (
+              <div key={feature} className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ 
+                    backgroundColor: {
+                      jawline: '#2563eb',
+                      right_eyebrow: '#16a34a',
+                      left_eyebrow: '#16a34a',
+                      nose_bridge: '#dc2626',
+                      nose_tip: '#dc2626',
+                      right_eye: '#4f46e5',
+                      left_eye: '#4f46e5',
+                      outer_lips: '#db2777',
+                      inner_lips: '#db2777'
+                    }[feature]
+                  }}
+                />
+                <span>{feature.replace(/_/g, ' ')} ({points.length} points)</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={() => setDebug(!debug)}
+          className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded"
+        >
+          {debug ? "Hide Debug Info" : "Show Debug Info"}
+        </button>
+      </div>
+
+      {debug && (
+        <div className="text-sm bg-gray-50 p-4 rounded">
+          <div className="font-medium mb-2">Debug Information:</div>
+          <div>Original Image Dimensions: {imageDimensions.width} x {imageDimensions.height}</div>
+          <div>Canvas Dimensions: {canvasRef.current?.width} x {canvasRef.current?.height}</div>
+        </div>
+      )}
     </div>
   );
 };
