@@ -1,16 +1,5 @@
-import EquationGraph from './components/EquationGraph'
+import FaceEquations from './components/FaceEquations';
 
 export default function Home() {
-  return (
-    <>
-    Hello world
-    {equations && (
-  <EquationGraph 
-    equations={equations} 
-    points={equations.outline_points} 
-  />
-)}
-    </>
-   
-  );
+  return <FaceEquations />;
 }
