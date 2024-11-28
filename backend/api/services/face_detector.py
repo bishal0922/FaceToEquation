@@ -7,6 +7,8 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import logging
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class FaceDetectionError(Exception):
@@ -23,7 +25,8 @@ class FaceDetector:
             )
             
             # Get the absolute path to the project root
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
             
             # Construct path to the model file
             model_path = os.path.join(
@@ -34,12 +37,15 @@ class FaceDetector:
                 "shape_predictor_68_face_landmarks.dat"
             )
             
-            logger.info(f"Loading face predictor model from: {model_path}")
+            logger.info(f"Project root: {project_root}")
+            logger.info(f"Looking for model at: {model_path}")
             
             if not os.path.exists(model_path):
                 raise FileNotFoundError(
                     f"Model file not found at {model_path}. Please ensure the file exists in the correct location."
                 )
+            
+            logger.info(f"Loading face predictor model from: {model_path}")
             
             # Initialize dlib's face detector and shape predictor
             self.detector = dlib.get_frontal_face_detector()
@@ -63,51 +69,55 @@ class FaceDetector:
         Returns:
             Dictionary containing points for different facial features
         """
-        # Convert landmarks to numpy array
-        landmarks = np.array([[p.x, p.y] for p in shape.parts()])
-        
-        # Define facial feature ranges
-        JAWLINE = list(range(0, 17))
-        RIGHT_EYEBROW = list(range(17, 22))
-        LEFT_EYEBROW = list(range(22, 27))
-        NOSE_BRIDGE = list(range(27, 31))
-        NOSE_TIP = list(range(31, 36))
-        RIGHT_EYE = list(range(36, 42))
-        LEFT_EYE = list(range(42, 48))
-        OUTER_LIPS = list(range(48, 60))
-        INNER_LIPS = list(range(60, 68))
-        
-        # Create normalized points for each feature
-        features = {
-            "jawline": landmarks[JAWLINE].tolist(),
-            "right_eyebrow": landmarks[RIGHT_EYEBROW].tolist(),
-            "left_eyebrow": landmarks[LEFT_EYEBROW].tolist(),
-            "nose_bridge": landmarks[NOSE_BRIDGE].tolist(),
-            "nose_tip": landmarks[NOSE_TIP].tolist(),
-            "right_eye": landmarks[RIGHT_EYE].tolist(),
-            "left_eye": landmarks[LEFT_EYE].tolist(),
-            "outer_lips": landmarks[OUTER_LIPS].tolist(),
-            "inner_lips": landmarks[INNER_LIPS].tolist()
-        }
-        
-        # Normalize coordinates to [0, 1] range
-        for feature in features:
-            points = np.array(features[feature])
-            if len(points) > 0:
-                x_min, y_min = points.min(axis=0)
-                x_max, y_max = points.max(axis=0)
-                
-                # Avoid division by zero
-                x_range = x_max - x_min or 1
-                y_range = y_max - y_min or 1
-                
-                normalized = [
-                    [(x - x_min) / x_range, (y - y_min) / y_range]
-                    for x, y in points
-                ]
-                features[feature] = normalized
-        
-        return features
+        try:
+            # Convert landmarks to numpy array
+            landmarks = np.array([[p.x, p.y] for p in shape.parts()])
+            
+            # Define facial feature ranges
+            JAWLINE = list(range(0, 17))
+            RIGHT_EYEBROW = list(range(17, 22))
+            LEFT_EYEBROW = list(range(22, 27))
+            NOSE_BRIDGE = list(range(27, 31))
+            NOSE_TIP = list(range(31, 36))
+            RIGHT_EYE = list(range(36, 42))
+            LEFT_EYE = list(range(42, 48))
+            OUTER_LIPS = list(range(48, 60))
+            INNER_LIPS = list(range(60, 68))
+            
+            # Create normalized points for each feature
+            features = {
+                "jawline": landmarks[JAWLINE].tolist(),
+                "right_eyebrow": landmarks[RIGHT_EYEBROW].tolist(),
+                "left_eyebrow": landmarks[LEFT_EYEBROW].tolist(),
+                "nose_bridge": landmarks[NOSE_BRIDGE].tolist(),
+                "nose_tip": landmarks[NOSE_TIP].tolist(),
+                "right_eye": landmarks[RIGHT_EYE].tolist(),
+                "left_eye": landmarks[LEFT_EYE].tolist(),
+                "outer_lips": landmarks[OUTER_LIPS].tolist(),
+                "inner_lips": landmarks[INNER_LIPS].tolist()
+            }
+            
+            # Normalize coordinates to [0, 1] range
+            for feature in features:
+                points = np.array(features[feature])
+                if len(points) > 0:
+                    x_min, y_min = points.min(axis=0)
+                    x_max, y_max = points.max(axis=0)
+                    
+                    # Avoid division by zero
+                    x_range = x_max - x_min or 1
+                    y_range = y_max - y_min or 1
+                    
+                    normalized = [
+                        [(x - x_min) / x_range, (y - y_min) / y_range]
+                        for x, y in points
+                    ]
+                    features[feature] = normalized
+            
+            return features
+        except Exception as e:
+            logger.error(f"Error processing landmarks: {str(e)}")
+            raise
 
     def detect_face(self, image: np.ndarray) -> Dict[str, List[Tuple[float, float]]]:
         """
@@ -123,11 +133,14 @@ class FaceDetector:
             FaceDetectionError: If no face is detected or processing fails
         """
         try:
+            logger.info("Starting face detection...")
             # Convert to grayscale
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            logger.info("Converted image to grayscale")
             
             # Detect faces using dlib
             faces = self.detector(gray)
+            logger.info(f"Detected {len(faces)} faces")
             
             if len(faces) == 0:
                 raise FaceDetectionError("No face detected in the image")
@@ -137,9 +150,12 @@ class FaceDetector:
             
             # Get facial landmarks
             shape = self.predictor(gray, faces[0])
+            logger.info("Face landmarks detected successfully")
             
             # Process and return normalized landmarks
-            return self._process_landmarks(shape)
+            result = self._process_landmarks(shape)
+            logger.info("Landmarks processed and normalized")
+            return result
             
         except FaceDetectionError:
             raise
@@ -157,11 +173,21 @@ class FaceDetector:
         Returns:
             Dictionary containing normalized coordinates for facial features
         """
-        loop = asyncio.get_event_loop()
+        logger.info("Starting async face detection...")
         try:
-            return await loop.run_in_executor(self.thread_pool, self.detect_face, image)
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(self.thread_pool, self.detect_face, image)
+            logger.info("Async face detection completed successfully")
+            return result
         except Exception as e:
             logger.error(f"Error in async face detection: {str(e)}")
             raise FaceDetectionError(f"Error in async face detection: {str(e)}")
 
-face_detector = FaceDetector()
+# Create the singleton instance
+detector = FaceDetector()
+
+# Export the instance directly
+face_detector = detector
+
+# Export everything needed
+__all__ = ['face_detector', 'FaceDetectionError', 'FaceDetector']

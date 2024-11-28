@@ -154,4 +154,10 @@ class EquationGenerator:
                 logger.error(f"Error in Fourier fitting: {str(e)}")
                 raise ValueError(f"Error in Fourier fitting: {str(e)}")
 
-equation_generator = EquationGenerator()
+_generator = EquationGenerator()
+
+def get_generator():
+    return _generator
+
+# Export these specifically
+__all__ = ['get_generator', 'EquationGenerator']
