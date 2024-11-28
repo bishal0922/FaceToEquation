@@ -2,6 +2,7 @@
 
 # dependencies
 /code/node_modules/
+/code/.next
 /.pnp
 .pnp.*
 .yarn/*
