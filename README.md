@@ -1,8 +1,27 @@
 # FaceToEquation
 
-![Image](IMG_2392.png)
+![Image](ss.png)
+![Landmarks](landmarks.png)
 
+### Concepts Utilized
+- Convex hull
+- Circumcircle and curvature
+- Bézier curves (rational and adaptive)
+- Hermite splines
+- Catmull-Rom splines
+- Cubic splines
+- NURBS (Non-Uniform Rational B-Splines)
+- Superellipse fitting
+- Fourier series fitting
+- Least squares optimization
+- Matrix operations for curve fitting
+- Polar coordinates for radial fitting
+- Piecewise curve segmentation
+- Bernstein polynomials
+- Differential geometry for curvature
+- Subdivision surfaces for smoothness
 
+### Maybe Features
 User uploads an image of their face
 Simple drag & drop or file select interface
 Show preview of uploaded image
