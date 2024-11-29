@@ -1,7 +1,7 @@
 # FaceToEquation
 
 ![Image](ss.png)
-![Landmarks](landmarks.png)
+![Landmarks](landmarks.jpg)
 
 ### Concepts Utilized
 - Convex hull
